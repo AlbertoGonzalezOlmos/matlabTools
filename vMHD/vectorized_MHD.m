@@ -1,4 +1,4 @@
-% Vectorized implementation of the Modified Hausdorff Distance (MHD)
+% Vectorized implementation of the Modified Hausdorff Distance (MHD) 
 %   as described by Dubuisson and Jain in:
 % 
 % M. P. Dubuisson and A. K. Jain. A Modified Hausdorff distance for object 
@@ -11,13 +11,12 @@
 %  and returns the MHD between the two sets.
 % 
 % The vectorized implementation is computationally more efficient than the 
-% for-loop version at the cost of ram memory but if the tow sets of points 
-% are too large and ram memory is depleted, then the for-loop version is 
-% more efficient.
+% for-loop version at the cost of ram memory.
 % 
-% Author: Alberto Gonzalez Olmos, PhD student in HCI
-% University of Glasgow, 2018
-
+% Author: Alberto Gonzalez Olmos, 2018
+% UPDATE: May 2022, 
+%   Spencer Chen improved memory efficiency and garbage
+%       collection time
 function mhd = vectorized_MHD (setA,setB)
     %% forward directed distance A -> B
     distanceAB = MHD_directedDistance(setA,setB);
@@ -27,15 +26,11 @@ function mhd = vectorized_MHD (setA,setB)
     %% undirected distance function (f2, from Dubuisson)
     mhd = max(distanceAB,distanceBA); clear setB setA;
 end
-
 function distances = MHD_directedDistance(set1,set2)
-    %% prepare set2 for vectorization:
-    size2 = [size(set2) size(set1,1)];
-    set2_expandedSpace = ones(size2); clear size2;
-    set2_expandedSpace = bsxfun(@times,set2_expandedSpace,set2); clear set2;
-    permute_set2_expSpc = permute(set2_expandedSpace,[3 2 1]); clear set2_expandedSpace;
-    
-    %% directed distance (d6, from Dubuisson) between the two sets:
-    diff_sets = bsxfun(@minus,permute_set2_expSpc,set1); clear permute_set2_expSpc set1;
-    distances = mean(min(sqrt(sum(diff_sets.^2,2)),[],3)); clear diff_sets;
+  %% prepare set2 for vectorization:
+  distances = repmat(set2, [1 1 size(set1,1)]);
+  distances = permute(distances,[3 2 1]);
+  %% directed distance (d6, from Dubuisson) between the two sets:
+  distances = bsxfun(@minus,distances,set1);
+  distances = mean(sqrt(min(sum(distances.^2,2),[],3)));
 end
